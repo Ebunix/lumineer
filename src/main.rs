@@ -217,7 +217,7 @@ async fn run(root: PathBuf, config: Config) -> Result<(), Error> {
                 }
             }
             drop(lock);
-            tokio::time::sleep(Duration::from_millis(10)).await;
+            tokio::time::sleep(Duration::from_millis(1000 / 40)).await;
         }
     });
 
