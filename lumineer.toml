@@ -1,0 +1,78 @@
+[lumineer]
+passcode = "party"
+# The address of the target ArtNet node to receive outgoing frames 
+artnet_remote = "2.0.0.5"
+# The address and port on which to listen for incoming WebSocket connections
+websocket_in = { address = "2.0.0.4", port = 8000 }
+# The address and port on which to listen for incoming UDP messages
+udp_in = { address = "2.0.0.4", port = 8005 }
+
+[scene]
+fixtures = [
+    { name = "IRGB", features = [
+        { name = "Dim", offset = 0, wide = true },
+        { name = "ColorR", offset = 2 },
+        { name = "ColorG", offset = 3 },
+        { name = "ColorB", offset = 4 },
+    ] },
+    { name = "Vizi", features = [
+        { name = "Pan", offset = 0, wide = true },
+        { name = "Tilt", offset = 2, wide = true },
+        { name = "ColorWheel", offset = 4, presets = [
+            { name = "Open", value = 0 },
+            { name = "Red", value = 9 },
+            { name = "Blue", value = 18 },
+            { name = "Aqua", value = 27 },
+            { name = "Yellow", value = 36 },
+            { name = "Magenta", value = 45 },
+            { name = "LightBlue", value = 54 },
+            { name = "Orange", value = 63 },
+            { name = "Pink", value = 72 },
+            { name = "DuckYellow", value = 81 },
+            { name = "DuckBlue", value = 90 },
+            { name = "UV", value = 99 },
+            { name = "CTO", value = 108 },
+            { name = "CTB", value = 117 },
+        ]  },
+        { name = "Gobo1", offset = 5, presets = [
+            { name = "Open", value = 0 },
+            { name = "Index1", value = 8 },
+            { name = "Index2", value = 16 },
+            { name = "Index3", value = 24 },
+            { name = "Index4", value = 32 },
+            { name = "Index5", value = 40 },
+            { name = "Index6", value = 48 },
+            { name = "Index7", value = 56 },
+            { name = "Index8", value = 64 },
+            { name = "Index9", value = 72 },
+            { name = "Index10", value = 80 },
+            { name = "Index11", value = 88 },
+            { name = "Index12", value = 96 },
+            { name = "Index13", value = 104 },
+            { name = "Index14", value = 112 },
+        ] },
+        { name = "Effect", offset = 6, presets = [
+            { name = "Open", value = 0 },
+            { name = "Frost", value = 32 },
+            { name = "Prism", value = 80 },
+        ] },
+        { name = "Prism", offset = 7 },
+        { name = "Shutter", offset = 8, presets = [
+            { name = "Closed", value = 0 },
+            { name = "Open", value = 32 },
+        ] },
+        { name = "Dim", offset = 9 },
+    ]}
+]
+universes = [
+    { id = 1, fixtures = [
+        { id = 101, name = "Vizi", address = 1 },
+    ] },
+    { id = 2, fixtures = [
+        { id = 201, name = "IRGB", address = 1 },
+        { id = 202, name = "IRGB", address = 6 },
+        { id = 203, name = "IRGB", address = 11 },
+        { id = 204, name = "IRGB", address = 16 },
+    ] },
+]
+
