@@ -3,11 +3,7 @@ use std::collections::HashMap;
 use artnet_protocol::Output;
 
 use crate::{
-    config::SceneConfig,
-    dmx::DmxAddress,
-    error::Error,
-    feature::Feature,
-    fixture::Fixture,
+    config::SceneConfig, dmx::DmxAddress, error::Error, feature::Feature, fixture::Fixture,
     universe::Universe,
 };
 
@@ -15,6 +11,7 @@ use crate::{
 pub struct Scene {
     fixtures: Vec<Fixture>,
     universes: Vec<Universe>,
+    output_disabled: bool,
 }
 
 enum FinalValue {
@@ -104,13 +101,19 @@ impl Scene {
                 let universe = &mut self.universes[universe_index];
                 if channel.is_16bit {
                     match final_value {
-                        FinalValue::F32(float) => universe.set_16bit_parameter_float(fixture.address + channel.offset, float),
-                        FinalValue::U16(int) => universe.set_16bit_parameter(fixture.address + channel.offset, int),
+                        FinalValue::F32(float) => universe
+                            .set_16bit_parameter_float(fixture.address + channel.offset, float),
+                        FinalValue::U16(int) => {
+                            universe.set_16bit_parameter(fixture.address + channel.offset, int)
+                        }
                     }
                 } else {
                     match final_value {
-                        FinalValue::F32(float) => universe.set_parameter_float(fixture.address + channel.offset, float),
-                        FinalValue::U16(int) => universe.set_parameter(fixture.address + channel.offset, (int & 0xff) as u8),
+                        FinalValue::F32(float) => {
+                            universe.set_parameter_float(fixture.address + channel.offset, float)
+                        }
+                        FinalValue::U16(int) => universe
+                            .set_parameter(fixture.address + channel.offset, (int & 0xff) as u8),
                     }
                 }
             } else {
@@ -121,12 +124,16 @@ impl Scene {
     }
 
     pub fn iter_output(&self) -> impl Iterator<Item = Output> {
-        self.universes.iter().map(|universe| universe.into_output())
+        self.universes.iter().map(|universe| universe.into_output(self.output_disabled))
     }
 
     pub fn zero(&mut self) {
         for u in &mut self.universes {
             u.zero();
         }
+    }
+
+    pub fn disable_output(&mut self, disabled: bool) {
+        self.output_disabled = disabled;
     }
 }

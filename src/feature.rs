@@ -2,6 +2,7 @@ use crate::dmx::Channel;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Feature {
+    ControlExt, 
     Control,
     Dim,
     Pan,
@@ -19,6 +20,8 @@ pub enum Feature {
 pub enum ControlFeature {
     Zero,
     End,
+    DisableOutput,
+    EnableOutput
 }
 
 impl Feature {
@@ -57,6 +60,9 @@ macro_rules! impl_enum_from_str {
 
 impl_enum_from_str! {
     Feature,
+    // DO NOT include ControlExt here, as it should not be constructible from
+    // regular messages, only from passcoded messages.
+    // ControlExt,
     Control,
     Dim,
     Pan,
@@ -74,5 +80,7 @@ impl_enum_from_str! {
 impl_enum_from_str! {
     ControlFeature,
     Zero,
-    End
+    End,
+    DisableOutput,
+    EnableOutput,
 }

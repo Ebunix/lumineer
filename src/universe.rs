@@ -10,6 +10,7 @@ use crate::dmx::DmxAddress;
 pub struct Universe {
     index: u8,
     data: [u8; 512],
+    disabled_data: [u8; 512],
     invalid_address_buffer: u8,
 }
 
@@ -18,13 +19,21 @@ impl Universe {
         Universe {
             index,
             data: [0; _],
+            disabled_data: [0; _],
             invalid_address_buffer: 0,
         }
     }
-    pub fn into_output(&self) -> Output {
+    pub fn into_output(&self, disabled: bool) -> Output {
         let mut out = Output::default();
         out.port_address = PortAddress::from(self.index);
-        out.data.as_mut().write_all(&self.data).ok();
+        out.data
+            .as_mut()
+            .write_all(if disabled {
+                &self.disabled_data
+            } else {
+                &self.data
+            })
+            .ok();
         out
     }
     pub fn zero(&mut self) {

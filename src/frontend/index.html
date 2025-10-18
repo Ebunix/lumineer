@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="page.css">
+</head>
+
+<body>
+    <h1>Lumineer</h1>
+    <script>
+        fetch("/page.js").then(response => {
+            const wsAddress = response.headers.get("X-Websocket-Address");
+            if (!wsAddress) {
+                console.error("WebSocket address not provided");
+                return;
+            }
+            response.text().then(script => {
+                //  :D
+                eval(script);
+                window.lumineer.main(wsAddress, window.location.search.slice(1));
+            });
+        })
+    </script>
+
+    <div class="buttons">
+        <div>
+            <button class="red" onclick="window.lumineer.disableOutput()">Disable Output</button>
+            <button class="green" onclick="window.lumineer.enableOutput()">Enable Output</button>
+        </div>
+        <div>
+            <button onclick="window.lumineer.zero()">Zero all output</button>
+        </div>
+    </div>
+
+</body>
+
+</html>

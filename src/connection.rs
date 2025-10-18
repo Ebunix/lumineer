@@ -16,6 +16,7 @@ use crate::{
 pub struct WebSocketConnection {
     scene: Arc<RwLock<Scene>>,
     stream: WebSocketStream<TcpStream>,
+    passcode: String,
 }
 
 impl WebSocketConnection {
@@ -23,10 +24,11 @@ impl WebSocketConnection {
         scene: Arc<RwLock<Scene>>,
         raw_stream: TcpStream,
         address: SocketAddr,
+        passcode: &str
     ) -> Result<Self, Error> {
         println!("WebSocket: New connection from {:?}", address);
         let stream = tokio_tungstenite::accept_async(raw_stream).await?;
-        Ok(Self { scene, stream })
+        Ok(Self { scene, stream, passcode: passcode.to_owned() })
     }
 
     pub async fn run(self) {
@@ -48,7 +50,7 @@ impl WebSocketConnection {
                 }
                 let data = message.into_data();
 
-                match handle_incoming_data(self.scene.clone(), &data).await {
+                match handle_incoming_data(self.scene.clone(), &data, &self.passcode).await {
                     Err(error) => {
                         eprintln!("WebSocket: Received data format error: {}", error);
                         if let Err(send_error) =

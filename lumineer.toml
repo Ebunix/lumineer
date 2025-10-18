@@ -1,11 +1,17 @@
 [lumineer]
 passcode = "party"
-# The address of the target ArtNet node to receive outgoing frames 
+
+# The address of the target ArtNet node, and the local interface to use for it 
 artnet_remote = "2.0.0.5"
-# The address and port on which to listen for incoming WebSocket connections
-websocket_in = { address = "2.0.0.4", port = 8000 }
-# The address and port on which to listen for incoming UDP messages
-udp_in = { address = "2.0.0.4", port = 8005 }
+local_address = "2.0.0.4"
+
+# The ports on which to listen for incoming WebSocket and UDP connections
+websocket_port = 8000
+udp_port = 8005
+
+# Port on which to expose the web interface
+frontend_port = 8080
+frontend_root = "src/frontend"
 
 [scene]
 fixtures = [
@@ -33,7 +39,7 @@ fixtures = [
             { name = "UV", value = 99 },
             { name = "CTO", value = 108 },
             { name = "CTB", value = 117 },
-        ]  },
+        ] },
         { name = "Gobo1", offset = 5, presets = [
             { name = "Open", value = 0 },
             { name = "Index1", value = 8 },
@@ -62,7 +68,7 @@ fixtures = [
             { name = "Open", value = 32 },
         ] },
         { name = "Dim", offset = 9 },
-    ]}
+    ] },
 ]
 universes = [
     { id = 1, fixtures = [
@@ -75,4 +81,3 @@ universes = [
         { id = 204, name = "IRGB", address = 16 },
     ] },
 ]
-

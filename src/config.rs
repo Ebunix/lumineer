@@ -10,8 +10,11 @@ pub struct Config {
 pub struct LumineerConfig {
     pub passcode: String,
     pub artnet_remote: String,
-    pub websocket_in: ConfigAddress,
-    pub udp_in: ConfigAddress,
+    pub local_address: String,
+    pub websocket_port: u16,
+    pub udp_port: u16,
+    pub frontend_port: u16,
+    pub frontend_root: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

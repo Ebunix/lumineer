@@ -1,10 +1,12 @@
-use std::fs;
+use std::fs::{self, File};
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 use std::{net::ToSocketAddrs, path, process::exit, sync::Arc};
 
 use artnet_protocol::{ArtCommand, Poll};
 use clap::Parser;
 use futures_util::future;
+use rouille::Response;
 use tokio::{
     net::{TcpListener, UdpSocket},
     sync::RwLock,
@@ -30,16 +32,53 @@ mod universe;
 
 const DEFAULT_ARTNET_PORT: u16 = 6454;
 
-async fn run(config: Config) -> Result<(), Error> {
+async fn run(root: PathBuf, config: Config) -> Result<(), Error> {
     let scene = Arc::new(RwLock::new(Scene::from_config(&config.scene)?));
+    let passcode = config.lumineer.passcode.clone();
+
+    // Setup frontend listener
+    let frontend_local_address = config.lumineer.local_address.clone();
+    let frontend_passcode = passcode.clone();
+    let frontend_future = tokio::spawn(async move {
+        let frontend_address = (
+            frontend_local_address.clone(),
+            config.lumineer.frontend_port,
+        )
+            .to_socket_addrs()
+            .unwrap()
+            .next()
+            .unwrap();
+        let frontend_root = root.join(Path::new(&config.lumineer.frontend_root));
+        println!(
+            "HTTP: Frontend available at http://{}?{}",
+            frontend_address, &frontend_passcode
+        );
+        rouille::start_server(frontend_address, move |request| {
+            let mut response = rouille::match_assets(request, &frontend_root);
+            if response.is_success() {
+                response = response.with_additional_header(
+                    "X-Websocket-Address",
+                    format!(
+                        "ws://{}:{}",
+                        frontend_local_address, config.lumineer.websocket_port
+                    ),
+                );
+                return response;
+            }
+            let path = frontend_root.join("index.html");
+            if let Ok(file) = File::open(path) {
+                return Response::from_file("text/html", file);
+            }
+            Response::empty_404()
+        });
+    });
 
     // Setup websocket listener
     let websocket_scene = scene.clone();
+    let websocket_passcode = passcode.clone();
+    let websocket_local_address = config.lumineer.local_address.clone();
     let websocket_future = tokio::spawn(async move {
-        let websocket_address = (
-            config.lumineer.websocket_in.address,
-            config.lumineer.websocket_in.port,
-        )
+        let websocket_address = (websocket_local_address, config.lumineer.websocket_port)
             .to_socket_addrs()
             .unwrap()
             .next()
@@ -48,25 +87,31 @@ async fn run(config: Config) -> Result<(), Error> {
             .await
             .expect("WebSocket: Failed to bind");
         println!("WebSocket: Listening on {}", websocket_address);
-        let websocket_scene = websocket_scene.clone();
         while let Ok((stream, address)) = websocket_listener.accept().await {
-            match WebSocketConnection::new(websocket_scene.clone(), stream, address).await {
-                Ok(connection) => {
-                    connection.run().await;
-                }
-                Err(error) => {
-                    eprintln!("WebSocket: connection failed {error}");
-                }
-            };
+            let websocket_scene = websocket_scene.clone();
+            let passcode = websocket_passcode.clone();
+            tokio::spawn(async move {
+                match WebSocketConnection::new(websocket_scene.clone(), stream, address, &passcode)
+                    .await
+                {
+                    Ok(connection) => {
+                        connection.run().await;
+                    }
+                    Err(error) => {
+                        eprintln!("WebSocket: connection failed {error}");
+                    }
+                };
+            });
         }
     });
 
     // Setup UDP listener
     let udp_scene = scene.clone();
+    let udp_local_address = config.lumineer.local_address.clone();
     let udp_future = tokio::spawn(async move {
         let mut recv_buffer = [0u8; 4096];
 
-        let udp_address = (config.lumineer.udp_in.address, config.lumineer.udp_in.port)
+        let udp_address = (udp_local_address, config.lumineer.udp_port)
             .to_socket_addrs()
             .unwrap()
             .next()
@@ -77,22 +122,24 @@ async fn run(config: Config) -> Result<(), Error> {
         println!("UDP: Listening on {}", udp_address);
         loop {
             match udp_socket.recv_from(&mut recv_buffer).await {
-                Ok(_) => match handle_incoming_data(udp_scene.clone(), &recv_buffer).await {
-                    Err(error) => {
-                        eprintln!("UDP: Received data format error: {}", error);
-                        //if let Err(send_error) = tx.unbounded_send(format!("Error: {}", error).into()) {
-                        //    eprintln!(
-                        //        "WebSocket: Send error trying to tell client about previous data format error: {}",
-                        //        send_error
-                        //    );
-                        //}
+                Ok(_) => {
+                    match handle_incoming_data(udp_scene.clone(), &recv_buffer, &passcode).await {
+                        Err(error) => {
+                            eprintln!("UDP: Received data format error: {}", error);
+                            //if let Err(send_error) = tx.unbounded_send(format!("Error: {}", error).into()) {
+                            //    eprintln!(
+                            //        "WebSocket: Send error trying to tell client about previous data format error: {}",
+                            //        send_error
+                            //    );
+                            //}
+                        }
+                        Ok(false) => {
+                            println!("UPD: Output end signaled");
+                            udp_scene.write().await.zero();
+                        }
+                        _ => {}
                     }
-                    Ok(false) => {
-                        println!("UPD: Output end signaled");
-                        udp_scene.write().await.zero();
-                    }
-                    _ => {}
-                },
+                }
                 Err(error) => {
                     eprintln!("UDP: Receive error {error}");
                 }
@@ -181,6 +228,7 @@ async fn run(config: Config) -> Result<(), Error> {
         udp_future,
         artnet_receive_future,
         dmx_out_future,
+        frontend_future,
     ])
     .await
     .0?;
@@ -203,7 +251,8 @@ async fn main() {
             exit(-1);
         }
     };
-    if let Err(error) = run(config).await {
+    let root = PathBuf::from(full_config_path.parent().unwrap());
+    if let Err(error) = run(root, config).await {
         eprintln!("Error: {error}");
     }
 }

@@ -1,0 +1,31 @@
+html {
+    background-color: #222;
+}
+body {
+    font-family: sans-serif;
+    color: #bbb
+}
+
+
+button {
+    font-size: large;
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    font-weight: bold;
+}
+
+.green {
+    background-color: #78d86f;
+    color: #333;
+}
+
+.red {
+    background-color: #d8766f;
+    color: #333;
+}
+
+.buttons > div {
+    margin-bottom: 16px;
+}
