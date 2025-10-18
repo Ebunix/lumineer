@@ -1,29 +1,5 @@
 use crate::dmx::Channel;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum Feature {
-    ControlExt, 
-    Control,
-    Dim,
-    Pan,
-    Tilt,
-    ColorWheel,
-    ColorR,
-    ColorG,
-    ColorB,
-    Gobo1,
-    Effect,
-    Prism,
-    Shutter,
-}
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum ControlFeature {
-    Zero,
-    End,
-    DisableOutput,
-    EnableOutput
-}
-
 impl Feature {
     pub fn as_channel(self, offset: u16) -> Channel {
         Channel::new(self, offset, false)
@@ -58,6 +34,23 @@ macro_rules! impl_enum_from_str {
     };
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Feature {
+    ControlExt,
+    Control,
+    Dim,
+    Pan,
+    Tilt,
+    ColorWheel,
+    ColorR,
+    ColorG,
+    ColorB,
+    Gobo1,
+    Effect,
+    Prism,
+    Shutter,
+    Focus
+}
 impl_enum_from_str! {
     Feature,
     // DO NOT include ControlExt here, as it should not be constructible from
@@ -75,8 +68,16 @@ impl_enum_from_str! {
     Effect,
     Prism,
     Shutter,
+    Focus,
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum ControlFeature {
+    Zero,
+    End,
+    DisableOutput,
+    EnableOutput,
+}
 impl_enum_from_str! {
     ControlFeature,
     Zero,
