@@ -1,24 +1,21 @@
 # Lumineer
 Lumineer is a server designed for giving granular control over a lighting rig to party visitors. It's primarily designed for the Demoscene, where requests have been made to incorporate the lighting of the party hall into productions.
 
-# How to use
-How you use Limuneer depends on who you actually are. Overall it is designed to be easy to use by party visitors without much of a hassle.
+# How it works
+Lumineer allows controling a predefined subset of each fixture's features by sending commands to an exposed UDP port or WebSocket server. The party orga sets up the configuration, and demos only need to connect and send data to these ports. At the same time this avoids issues that would arise from letting demos have direct control over the entire rig, as it allows giving access to only the intended chanels of a fixture. 
 
-## As visitor
-You either connect your demo via WebSocket (easiest for web-based demos) or send data directly to a UDP port on the Lumineer server. By default, the WebSocket port is 8000, and the UDP port is 8005.
+Lumineer understands 8bit, 16bit as well as floating point values, and automatically converts them to the neccessary DMX data needed to control fixtures precisely. In addition, Lumineer handles presets, allowing the use of named identifiers to access certain values by name, instead of by exact value. 
 
-## As operator
-You set up an instance of Lumineer on your lighting network. This requires a bit of consideration, as Lumineer needs to be able to send ArtNET packets to your lighting setup (other protocols may follow, but ArtNET is the most widespread). Lumineer currently does not work as a middleman or merger between your lighting console and your rig, so you will need a merger or node that can handle two separate ArtNET inputs. The configuration file included with Lumineer allows you to customize the setup and ports to your liking.
+# The protocol
+Lumineer uses a text-based protocol to deliver lighting data. It's built in a way so that visitors don't need to know about the inner workings of the lighting rig, the DMX protocol or exact addresses of any lighting fixtures in the hall. Addresses and exposed parameters are set up before the party by the organizers, and each fixture is assigned a unique ID. This ID is then used to address each fixture, making it possible to change their physical addresses without breaking existing configurations on the demo side.
 
-# Visitor protocol
-Lumineer uses a text-based protocol to deliver lighting data. It's built in a way where the visitors don't
-need to know about the inner workings of the lighting rig, the DMX protocol or exact addresses of any lighting fixtures in the hall. Addresses and exposed parameters are set up before the party by the organizers, and each fixture is assigned a unique ID. This ID is then used to address each fixture, making it possible to change their physical address without breaking existing configurations on the visitor side.
+A single update packet can consist of multiple fixture entries. A single fixture entry looks like the following, and note the `\n` at the end of the line. Each line of the update packet contains data to update a single fixture, but one packet may contain an arbitrary amount of lines. Each line has to be terminated with a newline (`\n`).
 
-A single update packet can consist of multiple fixture entries. A single fixture entry looks like this:
 ```
 <ID> <Feature> <Value>\n
 ```
-Where `ID` is a numeric identifier that uniquely identifies a single fixture. In the physical lighting rig, an ID maps to a DMX address somewhere in the setup, but the exact address is not relevant to the visitor. Also note the `\n` at the end of the line. Each line of the update packet contains data to update a single fixture, but one packet may contain an arbitrary amount of lines. Each line has to be terminated with a newline (`\n`).
+
+Where `ID` is a numeric identifier that uniquely identifies a single fixture. In the physical lighting rig, an ID maps to a DMX address somewhere in the setup, but the exact address is not relevant to the visitor. 
 
 The `Feature` of the update is a string identifier, telling Lumineer which parameter of the fixture to update. This also abstracts away the need to understand the difference between 8bit and 16bit parameters, as this is handled automatically for you by Lumineer.
 
